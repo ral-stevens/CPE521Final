@@ -1,0 +1,5 @@
+*.csv filter=lfs diff=lfs merge=lfs -text
+Bicocca_2009-02-25b-ODOMETRY_XYT.csv filter=lfs diff=lfs merge=lfs -text
+Bicocca_2009-02-25b-SICK_FRONT.csv filter=lfs diff=lfs merge=lfs -text
+Bicocca_2009-02-25b-SICK_REAR.csv filter=lfs diff=lfs merge=lfs -text
+Bicocca_2009-02-25b-IMU_STRETCHED.csv filter=lfs diff=lfs merge=lfs -text
