@@ -1,3 +1,6 @@
+# Dataset Description
+[rawseeds_d21part1.pdf](rawseeds_d21part1.pdf) describes the datasets, including how and where they were collected.
+
 # Usage
 ## Installing Git LFS
 [Git LFS](https://git-lfs.github.com/) is used to host the large csv files. You need install and initialize Git LFS before cloning the repository. 
