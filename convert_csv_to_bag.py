@@ -7,6 +7,7 @@ Updated on 11/19/2020 by Zhuo Chen <zchen39@stevens.edu>
 """
 
 import pandas as pd
+import numpy as np
 import rospy
 import tf
 from nav_msgs.msg import Odometry
@@ -100,37 +101,51 @@ def convert_odometry(outbag, csv_file_name = 'Bicocca_2009-02-25b-ODOMETRY_XYT.c
         t1, x1, y1, th1 = t, x, y, th
 
 
-def convert_laser(outbag, csv_file_name, topic_name, frame_id, yaw_displacement):
+def construct_TransformStamped(x, y, z, yaw_displacement, parent_frame_id, child_frame_id):
+    geo_msg = geometry_msgs.msg.TransformStamped()
+    geo_msg.header.frame_id = 'base_link'
+    geo_msg.child_frame_id = child_frame_id
+    geo_msg.transform.translation.x = x
+    geo_msg.transform.translation.y = y
+    geo_msg.transform.translation.z = z
+    q = tf.transformations.quaternion_from_euler(0,0,yaw_displacement) 
+    geo_msg.transform.rotation.x = q[0]
+    geo_msg.transform.rotation.y = q[1]
+    geo_msg.transform.rotation.z = q[2]
+    geo_msg.transform.rotation.w = q[3]
+    return geo_msg
+
+def write_static_tf(outbag, tf_msg, t_range):
+    i = 0
+    print("Generating static tf...")
+    for t_float in np.arange(t_range[0], t_range[1], 0.1):
+        t = rospy.Time.from_sec(t_float)
+        tf_msg.transforms[0].header.stamp = t
+        tf_msg.transforms[0].header.seq = i
+        tf_msg.transforms[1].header.stamp = t
+        tf_msg.transforms[1].header.seq = i
+        outbag.write('/tf_static', tf_msg, t)
+        i += 1
+
+def convert_laser(outbag, csv_file_name, topic_name, tf_msg):
     data_frame = pd.read_csv(csv_file_name) 
     num_rows = len(data_frame.index)
+
+    t_range = []
     
     for i, row in data_frame.iterrows():
         update_progress(float(i + 1) / num_rows, topic_name)
 
         t = rospy.Time.from_sec(float(row[0]))
-        
-        tf_msg = tf.msg.tfMessage()
-        geo_msg = geometry_msgs.msg.TransformStamped()
-        geo_msg.header.stamp = t 
-        geo_msg.header.seq = i
-        geo_msg.header.frame_id = 'base_link'
-        geo_msg.child_frame_id = frame_id
-        geo_msg.transform.translation.x = 0.08
-        geo_msg.transform.translation.y = 0
-        geo_msg.transform.translation.z = 0.45
-        q = tf.transformations.quaternion_from_euler(0,0,yaw_displacement) 
-        geo_msg.transform.rotation.x = q[0]
-        geo_msg.transform.rotation.y = q[1]
-        geo_msg.transform.rotation.z = q[2]
-        geo_msg.transform.rotation.w = q[3]
-        tf_msg.transforms.append(geo_msg)
-        outbag.write('/tf', tf_msg, t)
+        if not t_range:
+            t_range = [float(row[0]), 0.0]
+        t_range[1] = float(row[0])
     
         scan = LaserScan()
 
         scan.header.seq = i
         scan.header.stamp = t
-        scan.header.frame_id = frame_id
+        scan.header.frame_id = tf_msg.child_frame_id
     
         scan.angle_min = - math.pi / 2
         scan.angle_max = math.pi / 2
@@ -141,18 +156,31 @@ def convert_laser(outbag, csv_file_name, topic_name, frame_id, yaw_displacement)
         scan.intensities = []
         scan.ranges = row[3:184]  
         outbag.write(topic_name, scan, t)
+    return t_range
 
 
 
 if __name__ == '__main__':
     with rosbag.Bag('output.bag', 'w') as outbag:
         convert_odometry(outbag)
-        convert_laser(outbag, \
+
+        tf_front = construct_TransformStamped(x=0.08, y=0.0, z=0.45, yaw_displacement=0.0, \
+            parent_frame_id='base_link', child_frame_id='front_laser')
+        tf_rear = construct_TransformStamped(x=-0.463, y=0.001, z=0.454, yaw_displacement=math.pi, \
+            parent_frame_id='base_link', child_frame_id='rear_laser')
+
+        t_range_front = convert_laser(outbag, \
             csv_file_name = 'Bicocca_2009-02-25b-SICK_FRONT.csv', \
-            topic_name='front_scan', frame_id='front_laser', \
-            yaw_displacement=0)
-        convert_laser(outbag, \
+            topic_name='front_scan', tf_msg=tf_front)
+        t_range_rear = convert_laser(outbag, \
             csv_file_name = 'Bicocca_2009-02-25b-SICK_REAR.csv', \
-            topic_name='rear_scan', frame_id='rear_laser', \
-            yaw_displacement=math.pi)
+            topic_name='rear_scan', tf_msg=tf_rear)
+
+        tf_msg = tf.msg.tfMessage()
+        tf_msg.transforms = [tf_front, tf_rear]
+        write_static_tf(outbag, tf_msg, 
+            t_range=[min(t_range_front[0], t_range_rear[0]), max(t_range_front[1], t_range_rear[1])])
+
+        print("Done!")
+
         
