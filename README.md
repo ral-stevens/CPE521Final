@@ -33,12 +33,31 @@ Unpacking objects: 100% (9/9), done.<br/>
 
 You will not see the last line "Filtering content..." shown above if Git LFS is not correctly installed.
 
+## Installing the Python dependencies
+For ROS Kinetic and ROS Melodic, python 2 is used. Run
+```bash
+sudo apt-get install python-pip
+sudo pip install --upgrade pip
+sudo pip install numpy
+sudo pip install pandas
+```
+For ROS Noetic, python 3 is used. Run
+```bash
+sudo apt-get install python3-pip
+sudo pip3 install --upgrade pip
+sudo pip3 install numpy
+sudo pip3 install pandas
+```
 ## Executing the Python script
 Navigate into the directory you just cloned by running:
 ```bash
 cd CPE521Final
 ```
-Then run
+If you are using ROS Noetic run
+```bash
+python3 ./convert_csv_to_bag.py
+```
+For ealier ROS distros, run
 ```bash
 ./convert_csv_to_bag.py
 ```
