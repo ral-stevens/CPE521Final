@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-16.04
+            rosdistro: kinetic
+            python_version: ''
+          - os: ubuntu-18.04
+            rosdistro: melodic
+            python_version: ''
+          - os: ubuntu-20.04
+            rosdistro: noetic
+            python_version: '3'
+    
+    env:
+      ROSDISTRO: ${{ matrix.rosdistro }}
+      PYTHON_VERSION: ${{ matrix.python_version }}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+        with:
+          lfs: true
+      
+      - name: Install ROS
+        run: |
+          sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+          sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+          sudo apt-get update
+          sudo apt-get install ros-${ROSDISTRO}-desktop-full
+
+      - name: Install Python dependencies
+        run: |
+          sudo apt-get install python${PYTHON_VERSION}-pip
+          sudo pip${PYTHON_VERSION} install --upgrade pip
+          sudo pip${PYTHON_VERSION} install numpy
+          sudo pip${PYTHON_VERSION} install pandas
+          
+      - name: Convert
+        run: |
+          source /opt/ros/${ROSDISTRO}/setup.bash
+          python${PYTHON_VERSION} $GITHUB_WORKSPACE/convert_csv_to_bag.py
