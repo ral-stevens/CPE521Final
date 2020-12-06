@@ -34,6 +34,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           sudo apt-get install python-pip
+          sudo pip install --upgrade pip
           sudo pip install numpy
           sudo pip install pandas
 
