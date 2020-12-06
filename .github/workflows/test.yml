@@ -43,6 +43,7 @@ jobs:
           sudo apt-get install ros-${ROSDISTRO}-desktop-full
 
       - name: Install Python dependencies
+        if: ${{ matrix.rosdistro == 'kinetic' || matrix.rosdistro == 'melodic' }}
         run: |
           sudo apt-get install python-pip
           sudo pip install --upgrade pip
@@ -50,6 +51,7 @@ jobs:
           sudo pip install pandas
           
       - name: Install Python3 dependencies
+        if: ${{ matrix.rosdistro == 'noetic' }}
         run: |
           sudo apt-get install python3-pip
           sudo pip3 install --upgrade pip
