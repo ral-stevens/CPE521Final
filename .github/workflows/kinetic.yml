@@ -38,4 +38,6 @@ jobs:
           sudo pip install pandas
 
       - name: Convert
-        run: $GITHUB_WORKSPACE/convert_csv_to_bag.py
+        run: |
+          source /opt/ros/kinetic/setup.bash
+          $GITHUB_WORKSPACE/convert_csv_to_bag.py
