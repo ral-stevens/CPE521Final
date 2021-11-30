@@ -63,4 +63,4 @@ For ealier ROS distros, run
 ```
 
 # Questions
-Please email Zhuo Chen at zchen39@stevens.edu if you have any questions.
+Please email Guang Yang at gyang11@stevens.edu if you have any questions.
